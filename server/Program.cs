@@ -83,10 +83,17 @@ class ServerUDP
     //TODO: [Send Welcome]
     private void SendWelcome()
     {
-        string message = "WELCOME";
-        byte[] data = Encoding.UTF8.GetBytes(message);
-        server.Send(data, data.Length, clientEndpoint);
-        Console.WriteLine("Sent: WELCOME");
+        try
+        {
+            string welcomeMessage = "WELCOME";
+            byte[] data = Encoding.UTF8.GetBytes(welcomeMessage);
+            server.Send(data, data.Length, clientEndpoint);
+            Console.WriteLine("Sent: WELCOME");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error while sending welcome message: {ex.Message}");
+        }
     }
 
 
