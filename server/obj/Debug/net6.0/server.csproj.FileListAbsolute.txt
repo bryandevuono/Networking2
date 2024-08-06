@@ -1,0 +1,15 @@
+C:\Users\julin\OneDrive\Bureaublad\School\Jaar 2\Op3\Networking\Networking2\server\bin\Debug\net6.0\server.exe
+C:\Users\julin\OneDrive\Bureaublad\School\Jaar 2\Op3\Networking\Networking2\server\bin\Debug\net6.0\server.deps.json
+C:\Users\julin\OneDrive\Bureaublad\School\Jaar 2\Op3\Networking\Networking2\server\bin\Debug\net6.0\server.runtimeconfig.json
+C:\Users\julin\OneDrive\Bureaublad\School\Jaar 2\Op3\Networking\Networking2\server\bin\Debug\net6.0\server.dll
+C:\Users\julin\OneDrive\Bureaublad\School\Jaar 2\Op3\Networking\Networking2\server\bin\Debug\net6.0\server.pdb
+C:\Users\julin\OneDrive\Bureaublad\School\Jaar 2\Op3\Networking\Networking2\server\obj\Debug\net6.0\server.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\julin\OneDrive\Bureaublad\School\Jaar 2\Op3\Networking\Networking2\server\obj\Debug\net6.0\server.AssemblyInfoInputs.cache
+C:\Users\julin\OneDrive\Bureaublad\School\Jaar 2\Op3\Networking\Networking2\server\obj\Debug\net6.0\server.AssemblyInfo.cs
+C:\Users\julin\OneDrive\Bureaublad\School\Jaar 2\Op3\Networking\Networking2\server\obj\Debug\net6.0\server.csproj.CoreCompileInputs.cache
+C:\Users\julin\OneDrive\Bureaublad\School\Jaar 2\Op3\Networking\Networking2\server\obj\Debug\net6.0\server.sourcelink.json
+C:\Users\julin\OneDrive\Bureaublad\School\Jaar 2\Op3\Networking\Networking2\server\obj\Debug\net6.0\server.dll
+C:\Users\julin\OneDrive\Bureaublad\School\Jaar 2\Op3\Networking\Networking2\server\obj\Debug\net6.0\refint\server.dll
+C:\Users\julin\OneDrive\Bureaublad\School\Jaar 2\Op3\Networking\Networking2\server\obj\Debug\net6.0\server.pdb
+C:\Users\julin\OneDrive\Bureaublad\School\Jaar 2\Op3\Networking\Networking2\server\obj\Debug\net6.0\server.genruntimeconfig.cache
+C:\Users\julin\OneDrive\Bureaublad\School\Jaar 2\Op3\Networking\Networking2\server\obj\Debug\net6.0\ref\server.dll
