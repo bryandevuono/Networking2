@@ -21,20 +21,21 @@ class ClientUDP
     //TODO: implement all necessary logic to create sockets and handle incoming messages
     // Do not put all the logic into one method. Create multiple methods to handle different tasks.
 
-    private UdpClient client;
+    private Socket socket_client;
     private IPEndPoint serverEndpoint;
 
     public ClientUDP()
     {
-        client = new UdpClient();
+        client_socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
         serverEndpoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 9000); // Verander het IP-adres en de poort indien nodig
+        client_socket.Bind(serverEndpoint);
     }
     public void start()
     {
         try
         {
             SendHello();
-            // ReceiveWelcome();
+            ReceiveWelcome();
             // SendThreshold(10);
             // ReceiveAck();
             // RequestData("example.txt");
@@ -57,17 +58,32 @@ class ClientUDP
     private void SendHello()
     {
         string message = "HELLO";
-        byte[] data = Encoding.UTF8.GetBytes(message);
-        client.Send(data, data.Length, serverEndpoint);
-        Console.WriteLine("Sent: HELLO");
+        byte[] data = Encoding.ASCII.GetBytes(message);
+        client_socket.BeginSend(data, 0, data.Length, SocketFlags.None, (ar) =>
+        {
+            State so = (State)ar.AsyncState;
+            int bytes = server_socket.EndSend(ar);
+            Console.WriteLine("SEND: {0}, {1}", bytes, text);
+        }, state);
     }
 
     //TODO: [Receive Welcome]
     private void ReceiveWelcome()
     {
-        var response = client.Receive(ref serverEndpoint);
-        string message = Encoding.UTF8.GetString(response);
-        Console.WriteLine($"Received: {message}");
+        try
+        {
+            client_socket.BeginReceiveFrom(state.buffer, 0, bufSize, SocketFlags.None, ref epFrom, recv = (ar) =>
+            {
+                State so = (State)ar.AsyncState;
+                int bytes = client_socket.EndReceiveFrom(ar, ref epFrom);
+                client_socket.BeginReceiveFrom(so.buffer, 0, bufSize, SocketFlags.None, ref epFrom, recv, so);
+                Console.WriteLine("RECV: {0}: {1}, {2}", epFrom.ToString(), bytes, Encoding.ASCII.GetString(so.buffer, 0, bytes));
+            }, state);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error while receiving message: {ex.Message}");
+        }
     }
 
 
