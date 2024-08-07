@@ -36,6 +36,7 @@ class ServerUDP
     {
         try
         {
+            Console.WriteLine("Listening...")
             while (true)
             {
                 ReceiveMessage();
