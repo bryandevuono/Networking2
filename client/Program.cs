@@ -27,7 +27,7 @@ class ClientUDP
     public ClientUDP()
     {
         client_socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-        serverEndpoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 11000); // Verander het IP-adres en de poort indien nodig
+        serverEndpoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 32000); // Verander het IP-adres en de poort indien nodig
     }
     public void start()
     {

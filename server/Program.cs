@@ -29,7 +29,7 @@ class ServerUDP
     {
         server_socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
         clientEndpoint = new IPEndPoint(IPAddress.Any,0);
-        server_socket.Bind(new IPEndPoint(IPAddress.Any, 11000));
+        server_socket.Bind(new IPEndPoint(IPAddress.Any, 32000));
     }
 
     public void start()
