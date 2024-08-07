@@ -36,9 +36,9 @@ class ServerUDP
     {
         try
         {
+            ReceiveMessage();
             while (true)
             {
-                ReceiveMessage();
                 Thread.Sleep(10);
             }
         }
@@ -49,7 +49,7 @@ class ServerUDP
         finally
         {
 
-        }   
+        }
     }
 
     //TODO: create all needed objects for your sockets 
@@ -57,7 +57,7 @@ class ServerUDP
     private State state = new State();
 
     private AsyncCallback recv = null;
-     public class State
+    public class State
     {
         public byte[] buffer = new byte[bufSize];
     }
