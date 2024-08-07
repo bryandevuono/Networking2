@@ -28,7 +28,6 @@ class ClientUDP
     {
         client_socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
         serverEndpoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 11000); // Verander het IP-adres en de poort indien nodig
-        // client_socket.Bind(serverEndpoint);
     }
     public void start()
     {
@@ -89,9 +88,6 @@ class ClientUDP
                 State so = (State)ar.AsyncState;
                 int bytes = client_socket.EndReceiveFrom(ar, ref serverEndpoint);
                 string receivedMessage = Encoding.ASCII.GetString(so.buffer, 0, bytes);
-                // client_socket.BeginReceiveFrom(so.buffer, 0, bufSize, SocketFlags.None, ref epFrom, recv, so);
-                Console.WriteLine("RECV: {0}: {1}, {2}", serverEndpoint.ToString(), bytes, receivedMessage);
-
                 if (receivedMessage == "WELCOME")
                 {
                     Console.WriteLine("Welcome from the server");

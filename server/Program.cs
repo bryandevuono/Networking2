@@ -28,14 +28,15 @@ class ServerUDP
     public ServerUDP()
     {
         server_socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-        clientEndpoint = new IPEndPoint(IPAddress.Any, 11000);
-        server_socket.Bind(clientEndpoint);
+        clientEndpoint = new IPEndPoint(IPAddress.Any,0);
+        server_socket.Bind(new IPEndPoint(IPAddress.Any, 11000));
     }
 
     public void start()
     {
         try
         {
+            Console.WriteLine("Listening...");
             ReceiveMessage();
             while (true)
             {
@@ -74,7 +75,8 @@ class ServerUDP
                 State so = (State)ar.AsyncState;
                 int bytes = server_socket.EndReceiveFrom(ar, ref clientEndpoint);
                 server_socket.BeginReceiveFrom(so.buffer, 0, bufSize, SocketFlags.None, ref clientEndpoint, recv, so);
-                Console.WriteLine("RECV: {0}: {1}, {2}", clientEndpoint.ToString(), bytes, Encoding.ASCII.GetString(so.buffer, 0, bytes));
+                Console.WriteLine("Recieved from " + clientEndpoint + ": " + Encoding.ASCII.GetString(so.buffer, 0, bytes));
+                SendWelcome();
             }, state);
         }
         catch (Exception ex)
@@ -90,11 +92,18 @@ class ServerUDP
         {
             string welcomeMessage = "WELCOME";
             byte[] data = Encoding.ASCII.GetBytes(welcomeMessage);
-            server_socket.BeginSend(data, 0, data.Length, SocketFlags.None, (ar) =>
+            server_socket.BeginSendTo(data, 0, data.Length, SocketFlags.None, clientEndpoint, (ar) =>
             {
-                State so = (State)ar.AsyncState;
-                int bytes = server_socket.EndSend(ar);
-                Console.WriteLine("SEND: {0}, {1}", bytes, welcomeMessage);
+                try
+                {
+                    State so = (State)ar.AsyncState;
+                    int bytes = server_socket.EndSendTo(ar);
+                    Console.WriteLine("Sent: " + welcomeMessage + " to " + clientEndpoint);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error while completing send: {ex.Message}");
+                }
             }, state);
         }
         catch (Exception ex)
