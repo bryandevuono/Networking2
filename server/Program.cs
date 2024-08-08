@@ -52,19 +52,26 @@ class ServerUDP
     //TODO: create all needed objects for your sockets 
     private const int bufSize = 8 * 1024;
     public byte[] buffer = new byte[bufSize];
-    string ipAddress = "127.0.0.1";
-    int port = 32000;
+    public int threshold;
     //TODO: keep receiving messages from clients
     // you can call a dedicated method to handle each received type of messages
-
+    public static string SerializeMessage(Message message)
+    {
+        return JsonSerializer.Serialize(message);
+    }
+    public static Message DeserializeMessage(string jsonMessage)
+    {
+        return JsonSerializer.Deserialize<Message>(jsonMessage);
+    }
     //TODO: [Receive Hello]
     private void ReceiveMessage()
     {
         try
         {
             int receivedBytes = server_socket.ReceiveFrom(buffer, ref clientEndpoint);
-            string receivedMessage = Encoding.UTF8.GetString(buffer, 0, receivedBytes);
-            Console.WriteLine("Recieved from " + clientEndpoint + ": " + receivedMessage);
+            string jsonMessage = Encoding.UTF8.GetString(buffer, 0, receivedBytes);
+            Message ReceivedMessage = DeserializeMessage(jsonMessage); 
+            Console.WriteLine("Recieved from " + clientEndpoint + ": " + ReceivedMessage.Content);
             SendWelcome();
         }
         catch (Exception ex)
@@ -78,22 +85,58 @@ class ServerUDP
     {
         try
         {
-            string welcomeMessage = "WELCOME";
+            Message Welcome = new Message();
+            Welcome.Type = MessageType.Welcome;
+            Welcome.Content = "WELCOME";
+            string welcomeMessage = SerializeMessage(Welcome);
             byte[] data = Encoding.ASCII.GetBytes(welcomeMessage);
             server_socket.SendTo(data, clientEndpoint);
-            Console.WriteLine($"Message sent to {0}:{1}: {welcomeMessage}", ipAddress, port);
+            Console.WriteLine($"Message sent to {clientEndpoint}: {Welcome.Content}");
+            ReceiveThreshold();
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error while sending welcome message: {ex.Message}");
         }
     }
-
-
     //TODO: [Receive Data]
-
+    private void ReceiveThreshold()
+    {
+        try
+        {
+            while(true)
+            {
+                int receivedBytes = server_socket.ReceiveFrom(buffer, ref clientEndpoint);
+                string jsonMessage = Encoding.UTF8.GetString(buffer, 0, receivedBytes);
+                Message ReceivedMessage = DeserializeMessage(jsonMessage); 
+                threshold = Int32.Parse(ReceivedMessage.Content);
+                Console.WriteLine("Recieved threshold from " + clientEndpoint + ": " + ReceivedMessage.Content);
+                SendThresholdACK();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error while receiving message: {ex.Message}");
+        }
+    }
     //TODO: [Send Ack]
-
+    private void SendThresholdACK()
+    {
+        try
+        {
+            Message ThresholdAck = new Message();
+            ThresholdAck.Type = MessageType.Ack;
+            ThresholdAck.Content = "ACK: Threshold is received";
+            string Ack = SerializeMessage(ThresholdAck);
+            byte[] data = Encoding.ASCII.GetBytes(Ack);
+            server_socket.SendTo(data, clientEndpoint);
+            Console.WriteLine($"Message sent to {clientEndpoint}: {ThresholdAck.Content}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error while sending message: {ex.Message}");
+        }
+    }
     //TODO: [Receive RequestData]
 
     //TODO: [Send Data]

@@ -52,17 +52,28 @@ class ClientUDP
     //TODO: create all needed objects for your sockets 
     private const int bufSize = 8 * 1024;
     public byte[] buffer = new byte[bufSize];
-    string ipAddress = "127.0.0.1";
-    int port = 32000;
+    int threshold = 1472;
+    public static string SerializeMessage(Message message)
+    {
+        return JsonSerializer.Serialize(message);
+    }
+    public static Message DeserializeMessage(string jsonMessage)
+    {
+        return JsonSerializer.Deserialize<Message>(jsonMessage);
+    }
     //TODO: [Send Hello message]
     private void SendHello()
     {
         try
         {
-            string message = "HELLO";
-            byte[] data = Encoding.ASCII.GetBytes(message);
+            // Het sturen van messages is hier versimpeld "SendTo(data, receiver adress)"
+            Message Hello = new Message();
+            Hello.Type = MessageType.Hello;
+            Hello.Content = "HELLO";
+            string message = SerializeMessage(Hello);
+            byte[] data = Encoding.UTF8.GetBytes(message);
             client_socket.SendTo(data, serverEndpoint);
-            Console.WriteLine($"Message sent to {0}:{1}: {message}", ipAddress, port);
+            Console.WriteLine($"Message sent to {serverEndpoint}: {Hello.Content}");
         }
         catch (Exception ex)
         {
@@ -76,10 +87,12 @@ class ClientUDP
         try
         {
             int receivedBytes = client_socket.ReceiveFrom(buffer, ref serverEndpoint);
-            string receivedMessage = Encoding.UTF8.GetString(buffer, 0, receivedBytes);
-            if (receivedMessage == "WELCOME")
+            string jsonMessage = Encoding.UTF8.GetString(buffer, 0, receivedBytes);
+            Message ReceivedMessage = DeserializeMessage(jsonMessage); 
+            if (ReceivedMessage.Content == "WELCOME")
             {
                 Console.WriteLine("Welcome from the server");
+                SendTreshold();
             }
         }
         catch (Exception ex)
@@ -90,9 +103,42 @@ class ClientUDP
 
 
     //TODO: [Send Data(threshold)]
-
+    private void SendTreshold()
+    {
+        try
+        {
+            Message Threshold = new Message();
+            Threshold.Type = MessageType.Data;
+            Threshold.Content = threshold.ToString();
+            string message = SerializeMessage(Threshold);
+            byte[] data = Encoding.UTF8.GetBytes(message);
+            client_socket.SendTo(data, serverEndpoint);
+            Console.WriteLine("Threshold sent");
+            ReceiveThresholdACK();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"Error while sending message: {e.Message}");
+        }
+    }
     //TODO: [Receive ACK]
-
+    private void ReceiveThresholdACK()
+    {
+        try
+        {
+            int receivedBytes = client_socket.ReceiveFrom(buffer, ref serverEndpoint);
+            string jsonMessage = Encoding.UTF8.GetString(buffer, 0, receivedBytes);
+            Message ReceivedMessage = DeserializeMessage(jsonMessage); 
+            if (ReceivedMessage.Type == MessageType.Ack)
+            {
+                Console.WriteLine(ReceivedMessage.Content);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error while receiving message: {ex.Message}");
+        }
+    }
     //TODO: [Send RequestData]
 
     //TODO: [Receive Data]
