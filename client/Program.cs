@@ -51,13 +51,9 @@ class ClientUDP
     }
     //TODO: create all needed objects for your sockets 
     private const int bufSize = 8 * 1024;
-    private State state = new State();
-
-    private AsyncCallback recv = null;
-    public class State
-    {
-        public byte[] buffer = new byte[bufSize];
-    }
+    public byte[] buffer = new byte[bufSize];
+    string ipAddress = "127.0.0.1";
+    int port = 32000;
     //TODO: [Send Hello message]
     private void SendHello()
     {
@@ -65,12 +61,8 @@ class ClientUDP
         {
             string message = "HELLO";
             byte[] data = Encoding.ASCII.GetBytes(message);
-            client_socket.BeginSendTo(data, 0, data.Length, SocketFlags.None, serverEndpoint, (ar) =>
-            {
-                State so = (State)ar.AsyncState;
-                int bytes = client_socket.EndSendTo(ar);
-                Console.WriteLine("SEND: {0}, {1}", bytes, message);
-            }, state);
+            client_socket.SendTo(data, serverEndpoint);
+            Console.WriteLine($"Message sent to {0}:{1}: {message}", ipAddress, port);
         }
         catch (Exception ex)
         {
@@ -83,17 +75,12 @@ class ClientUDP
     {
         try
         {
-            client_socket.BeginReceiveFrom(state.buffer, 0, bufSize, SocketFlags.None, ref serverEndpoint, recv = (ar) =>
+            int receivedBytes = client_socket.ReceiveFrom(buffer, ref serverEndpoint);
+            string receivedMessage = Encoding.UTF8.GetString(buffer, 0, receivedBytes);
+            if (receivedMessage == "WELCOME")
             {
-                State so = (State)ar.AsyncState;
-                int bytes = client_socket.EndReceiveFrom(ar, ref serverEndpoint);
-                string receivedMessage = Encoding.ASCII.GetString(so.buffer, 0, bytes);
-                if (receivedMessage == "WELCOME")
-                {
-                    Console.WriteLine("Welcome from the server");
-                }
-                client_socket.BeginReceiveFrom(so.buffer, 0, bufSize, SocketFlags.None, ref serverEndpoint, recv, so);
-            }, state);
+                Console.WriteLine("Welcome from the server");
+            }
         }
         catch (Exception ex)
         {

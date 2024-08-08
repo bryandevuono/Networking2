@@ -47,21 +47,13 @@ class ServerUDP
         {
             Console.WriteLine($"Error: {ex.Message}");
         }
-        finally
-        {
-
-        }
     }
 
     //TODO: create all needed objects for your sockets 
     private const int bufSize = 8 * 1024;
-    private State state = new State();
-
-    private AsyncCallback recv = null;
-    public class State
-    {
-        public byte[] buffer = new byte[bufSize];
-    }
+    public byte[] buffer = new byte[bufSize];
+    string ipAddress = "127.0.0.1";
+    int port = 32000;
     //TODO: keep receiving messages from clients
     // you can call a dedicated method to handle each received type of messages
 
@@ -70,14 +62,10 @@ class ServerUDP
     {
         try
         {
-            server_socket.BeginReceiveFrom(state.buffer, 0, bufSize, SocketFlags.None, ref clientEndpoint, recv = (ar) =>
-            {
-                State so = (State)ar.AsyncState;
-                int bytes = server_socket.EndReceiveFrom(ar, ref clientEndpoint);
-                server_socket.BeginReceiveFrom(so.buffer, 0, bufSize, SocketFlags.None, ref clientEndpoint, recv, so);
-                Console.WriteLine("Recieved from " + clientEndpoint + ": " + Encoding.ASCII.GetString(so.buffer, 0, bytes));
-                SendWelcome();
-            }, state);
+            int receivedBytes = server_socket.ReceiveFrom(buffer, ref clientEndpoint);
+            string receivedMessage = Encoding.UTF8.GetString(buffer, 0, receivedBytes);
+            Console.WriteLine("Recieved from " + clientEndpoint + ": " + receivedMessage);
+            SendWelcome();
         }
         catch (Exception ex)
         {
@@ -92,19 +80,8 @@ class ServerUDP
         {
             string welcomeMessage = "WELCOME";
             byte[] data = Encoding.ASCII.GetBytes(welcomeMessage);
-            server_socket.BeginSendTo(data, 0, data.Length, SocketFlags.None, clientEndpoint, (ar) =>
-            {
-                try
-                {
-                    State so = (State)ar.AsyncState;
-                    int bytes = server_socket.EndSendTo(ar);
-                    Console.WriteLine("Sent: " + welcomeMessage + " to " + clientEndpoint);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error while completing send: {ex.Message}");
-                }
-            }, state);
+            server_socket.SendTo(data, clientEndpoint);
+            Console.WriteLine($"Message sent to {0}:{1}: {welcomeMessage}", ipAddress, port);
         }
         catch (Exception ex)
         {
