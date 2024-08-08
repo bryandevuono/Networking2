@@ -88,7 +88,7 @@ class ClientUDP
         {
             int receivedBytes = client_socket.ReceiveFrom(buffer, ref serverEndpoint);
             string jsonMessage = Encoding.UTF8.GetString(buffer, 0, receivedBytes);
-            Message ReceivedMessage = DeserializeMessage(jsonMessage); 
+            Message ReceivedMessage = DeserializeMessage(jsonMessage);
             if (ReceivedMessage.Content == "WELCOME")
             {
                 Console.WriteLine("Welcome from the server");
@@ -128,7 +128,7 @@ class ClientUDP
         {
             int receivedBytes = client_socket.ReceiveFrom(buffer, ref serverEndpoint);
             string jsonMessage = Encoding.UTF8.GetString(buffer, 0, receivedBytes);
-            Message ReceivedMessage = DeserializeMessage(jsonMessage); 
+            Message ReceivedMessage = DeserializeMessage(jsonMessage);
             if (ReceivedMessage.Type == MessageType.Ack)
             {
                 Console.WriteLine(ReceivedMessage.Content);
@@ -140,8 +140,44 @@ class ClientUDP
         }
     }
     //TODO: [Send RequestData]
+    private void SendRequestData()
+    {
+        try
+        {
+            Message requestData = new Message();
+            requestData.Type = MessageType.RequestData;
+            requestData.Content = requestData.ToString();
+            string message = SerializeMessage(requestData);
+            byte[] data = Encoding.UTF8.GetBytes(message);
+            client_socket.SendTo(data, serverEndpoint);
+            Console.WriteLine("Request for data sent.");
+            ReceiveData();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error while sending data request: {ex.Message}");
+        }
+    }
 
     //TODO: [Receive Data]
+    private void ReceiveData()
+    {
+        try
+        {
+            int receivedBytes = client_socket.ReceiveFrom(buffer, ref serverEndpoint);
+            string jsonMessage = Encoding.UTF8.GetString(buffer, 0, receivedBytes);
+            Message receivedMessage = DeserializeMessage(jsonMessage);
+            if (receivedMessage.Type == MessageType.Data)
+            {
+                Console.WriteLine($"Data received from server: {receivedMessage.Content}");
+                // sendAck(receivedMessage.Content);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error while receiving data: {ex.Message}");
+        }
+    }
 
     //TODO: [Send ACK]
 
