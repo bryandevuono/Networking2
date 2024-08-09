@@ -180,6 +180,23 @@ class ClientUDP
     }
 
     //TODO: [Send ACK]
+    public void SendAck(string receivedContent)
+    {
+        try
+        {
+            Message ackMessage = new Message();
+            ackMessage.Type = MessageType.Ack;
+            ackMessage.Content = $"ACK: Data '{receivedContent}' received";
+            string message = SerializeMessage(ackMessage);
+            byte[] data = Encoding.UTF8.GetBytes(message);
+            client_socket.SendTo(data, serverEndpoint);
+            Console.WriteLine("Acknowledgment sent");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error while sending acknowledgment: {ex.Message}");
+        }
+    }
 
     //TODO: [Receive END]
 
