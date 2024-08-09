@@ -158,19 +158,25 @@ class ServerUDP
     }
 
     //TODO: [Send Data]
+    private string[] SplitIntoFragments(string filepath)
+    {
+        string data = File.ReadAllText(filePath);
+        int fragmentCount = (data.Length + MAX_UDP_PAYLOAD - 1) / MAX_UDP_PAYLOAD;
+        string[] fragments = new string[fragmentCount];
+
+        for (int i = 0; i < fragmentCount; i++)
+        {
+            int startIndex = i * MAX_UDP_PAYLOAD;
+            int length = Math.Min(MAX_UDP_PAYLOAD, data.Length - startIndex);
+            fragments[i] = data.Substring(startIndex, length);
+        }
+        return fragments;
+    }
     private void SendData()
     {
         try
         {
-            string dataToSend = "This is the data you requested.";
-            Message dataMessage = new Message();
-            dataMessage.Type = MessageType.Data;
-            dataMessage.Content = dataToSend;
-            string jsonDataMessage = SerializeMessage(dataMessage);
-            byte[] dataBytes = Encoding.UTF8.GetBytes(jsonDataMessage);
-            server_socket.SendTo(dataBytes, clientEndpoint);
-            Console.WriteLine($"Data sent to {clientEndpoint}: {dataToSend}");
-            // ReceiveAck();
+            // send fragments with slowstart
         }
         catch (Exception ex)
         {
@@ -179,7 +185,10 @@ class ServerUDP
     }
 
     //TODO: [Implement your slow-start algorithm considering the threshold] 
-
+    private void SlowStart()
+    {
+        return;
+    }
     //TODO: [End sending data to client]
 
     //TODO: [Handle Errors]
