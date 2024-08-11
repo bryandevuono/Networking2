@@ -23,7 +23,7 @@ class ClientUDP
 
     private Socket client_socket;
     private EndPoint serverEndpoint;
-
+    public int AcksSent;
     public ClientUDP()
     {
         client_socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
@@ -35,24 +35,16 @@ class ClientUDP
         {
             SendHello();
             ReceiveWelcome();
-            while (true)
-            {
-                Thread.Sleep(10);
-            }
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error: {ex.Message}");
         }
-        finally
-        {
-            client_socket.Close();
-        }
     }
     //TODO: create all needed objects for your sockets 
     private const int bufSize = 8 * 1024;
     public byte[] buffer = new byte[bufSize];
-    int threshold = 1472;
+    int threshold = 10;
     public static string SerializeMessage(Message message)
     {
         return JsonSerializer.Serialize(message);
@@ -73,7 +65,7 @@ class ClientUDP
             string message = SerializeMessage(Hello);
             byte[] data = Encoding.UTF8.GetBytes(message);
             client_socket.SendTo(data, serverEndpoint);
-            Console.WriteLine($"Message sent to {serverEndpoint}: {Hello.Content}");
+            Console.WriteLine($"Message sent to {serverEndpoint}: {Hello.Content}\n");
         }
         catch (Exception ex)
         {
@@ -91,7 +83,7 @@ class ClientUDP
             Message ReceivedMessage = DeserializeMessage(jsonMessage);
             if (ReceivedMessage.Content == "WELCOME")
             {
-                Console.WriteLine("Welcome from the server");
+                Console.WriteLine("Welcome from the server\n");
                 SendTreshold();
             }
         }
@@ -132,6 +124,7 @@ class ClientUDP
             if (ReceivedMessage.Type == MessageType.Ack)
             {
                 Console.WriteLine(ReceivedMessage.Content);
+                SendRequestData();
             }
         }
         catch (Exception ex)
@@ -146,51 +139,55 @@ class ClientUDP
         {
             Message requestData = new Message();
             requestData.Type = MessageType.RequestData;
-            requestData.Content = requestData.ToString();
+            requestData.Content = "hamlet.txt";
             string message = SerializeMessage(requestData);
             byte[] data = Encoding.UTF8.GetBytes(message);
             client_socket.SendTo(data, serverEndpoint);
-            Console.WriteLine("Request for data sent.");
+            Console.WriteLine("Request for data sent.\n");
             ReceiveData();
         }
-        catch (Exception ex)
+        catch
         {
-            Console.WriteLine($"Error while sending data request: {ex.Message}");
+            return;
         }
     }
 
     //TODO: [Receive Data]
     private void ReceiveData()
     {
-        try
+        while (true)
         {
             int receivedBytes = client_socket.ReceiveFrom(buffer, ref serverEndpoint);
-            string jsonMessage = Encoding.UTF8.GetString(buffer, 0, receivedBytes);
-            Message receivedMessage = DeserializeMessage(jsonMessage);
-            if (receivedMessage.Type == MessageType.Data)
+            string receivedMessage = Encoding.UTF8.GetString(buffer, 0, receivedBytes);
+            try
             {
-                Console.WriteLine($"Data received from server: {receivedMessage.Content}");
-                // sendAck(receivedMessage.Content);
+                Message endMessage = DeserializeMessage(receivedMessage);
+                if(endMessage.Type == MessageType.End)
+                {
+                    ReceiveEnd();
+                }
             }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error while receiving data: {ex.Message}");
+            catch
+            {
+                Console.WriteLine($"Data received from server: {receivedMessage}\n");
+                SendAck();
+            }
         }
     }
 
     //TODO: [Send ACK]
-    public void SendAck(string receivedContent)
+    public void SendAck()
     {
         try
         {
             Message ackMessage = new Message();
             ackMessage.Type = MessageType.Ack;
-            ackMessage.Content = $"ACK: Data '{receivedContent}' received";
+            ackMessage.Content = $"ACK: Data with ID: '{AcksSent}' received\n";
             string message = SerializeMessage(ackMessage);
             byte[] data = Encoding.UTF8.GetBytes(message);
             client_socket.SendTo(data, serverEndpoint);
             Console.WriteLine("Acknowledgment sent");
+            AcksSent++;
         }
         catch (Exception ex)
         {
@@ -199,6 +196,17 @@ class ClientUDP
     }
 
     //TODO: [Receive END]
-
+    private void ReceiveEnd()
+    {
+        try
+        {
+            Console.WriteLine("End");
+            client_socket.Close();
+        }
+        catch
+        {
+            Console.WriteLine("Can't close the connection");
+        }
+    }
     //TODO: [Handle Errors]
 }

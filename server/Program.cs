@@ -38,10 +38,6 @@ class ServerUDP
         {
             Console.WriteLine("Listening...");
             ReceiveMessage();
-            while (true)
-            {
-                Thread.Sleep(10);
-            }
         }
         catch (Exception ex)
         {
@@ -53,6 +49,9 @@ class ServerUDP
     private const int bufSize = 8 * 1024;
     public byte[] buffer = new byte[bufSize];
     public int threshold;
+    public int acksReceived;
+    int packetsSent;
+    int packetRate;
     //TODO: keep receiving messages from clients
     // you can call a dedicated method to handle each received type of messages
     public static string SerializeMessage(Message message)
@@ -91,7 +90,7 @@ class ServerUDP
             string welcomeMessage = SerializeMessage(Welcome);
             byte[] data = Encoding.ASCII.GetBytes(welcomeMessage);
             server_socket.SendTo(data, clientEndpoint);
-            Console.WriteLine($"Message sent to {clientEndpoint}: {Welcome.Content}");
+            Console.WriteLine($"Message sent to {clientEndpoint}: {Welcome.Content}\n");
             ReceiveThreshold();
         }
         catch (Exception ex)
@@ -104,15 +103,12 @@ class ServerUDP
     {
         try
         {
-            while (true)
-            {
-                int receivedBytes = server_socket.ReceiveFrom(buffer, ref clientEndpoint);
-                string jsonMessage = Encoding.UTF8.GetString(buffer, 0, receivedBytes);
-                Message ReceivedMessage = DeserializeMessage(jsonMessage);
-                threshold = Int32.Parse(ReceivedMessage.Content);
-                Console.WriteLine("Recieved threshold from " + clientEndpoint + ": " + ReceivedMessage.Content);
-                SendThresholdACK();
-            }
+            int receivedBytes = server_socket.ReceiveFrom(buffer, ref clientEndpoint);
+            string jsonMessage = Encoding.UTF8.GetString(buffer, 0, receivedBytes);
+            Message ReceivedMessage = DeserializeMessage(jsonMessage);
+            threshold = Int32.Parse(ReceivedMessage.Content);
+            Console.WriteLine("Recieved threshold from " + clientEndpoint + ": " + ReceivedMessage.Content);
+            SendThresholdACK();
         }
         catch (Exception ex)
         {
@@ -126,11 +122,25 @@ class ServerUDP
         {
             Message ThresholdAck = new Message();
             ThresholdAck.Type = MessageType.Ack;
-            ThresholdAck.Content = "ACK: Threshold is received";
+            ThresholdAck.Content = "ACK: Threshold is received\n";
             string Ack = SerializeMessage(ThresholdAck);
             byte[] data = Encoding.ASCII.GetBytes(Ack);
             server_socket.SendTo(data, clientEndpoint);
-            Console.WriteLine($"Message sent to {clientEndpoint}: {ThresholdAck.Content}");
+            ReceiveRequestData();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error while sending message: {ex.Message}");
+        }
+    }
+    private void SendDataAck(Message message)
+    {
+        try
+        {
+            string Ack = SerializeMessage(message);
+            byte[] data = Encoding.ASCII.GetBytes(Ack);
+            server_socket.SendTo(data, clientEndpoint);
+            Console.WriteLine($"Message sent to {clientEndpoint}: {message.Content}");
         }
         catch (Exception ex)
         {
@@ -145,10 +155,11 @@ class ServerUDP
             int receivedBytes = server_socket.ReceiveFrom(buffer, ref clientEndpoint);
             string jsonMessage = Encoding.UTF8.GetString(buffer, 0, receivedBytes);
             Message receivedMessage = DeserializeMessage(jsonMessage);
-            Console.WriteLine($"Received data request from {clientEndpoint}: {receivedMessage.Content}");
-            if (receivedMessage.Type == MessageType.RequestData)
+            Console.WriteLine($"Received data request from {clientEndpoint}: {receivedMessage.Content}\n");
+            if (receivedMessage.Type == MessageType.RequestData && receivedMessage.Content == "hamlet.txt")
             {
-                SendData();
+                string[] fragments = SplitIntoFragments("hamlet.txt");
+                SendData(fragments);
             }
         }
         catch (Exception ex)
@@ -158,8 +169,9 @@ class ServerUDP
     }
 
     //TODO: [Send Data]
-    private string[] SplitIntoFragments(string filepath)
+    private string[] SplitIntoFragments(string filePath)
     {
+        const int MAX_UDP_PAYLOAD = 508;
         string data = File.ReadAllText(filePath);
         int fragmentCount = (data.Length + MAX_UDP_PAYLOAD - 1) / MAX_UDP_PAYLOAD;
         string[] fragments = new string[fragmentCount];
@@ -172,29 +184,79 @@ class ServerUDP
         }
         return fragments;
     }
-    private void SendData()
+    private void SendData(string[] fragments)
     {
-        try
+        int packetRate = 1;
+        int currentIndex = 0;
+        while(currentIndex < fragments.Length)
         {
-            // send fragments with slowstart
+            acksReceived = 0;
+            packetsSent = 0;
+            for (int i = 0; i < packetRate && currentIndex < fragments.Length; i++)
+            {
+                string message = $"{currentIndex} {fragments[currentIndex]}";
+                byte[] data = Encoding.UTF8.GetBytes(message);
+
+                server_socket.SendTo(data, clientEndpoint);
+                Console.WriteLine($"Sent: {message}");
+                packetsSent++;
+                currentIndex++;
+                Thread.Sleep(1 / packetRate);// timeout
+                Console.WriteLine($"Packet rate: {packetRate}");
+                Console.WriteLine($"Ack's received: {acksReceived}");
+            }
+            server_socket.ReceiveTimeout = 10;
+            while (acksReceived < packetsSent)
+            {
+                try
+                {
+                    int receivedBytes = server_socket.ReceiveFrom(buffer, ref clientEndpoint);
+                    string jsonMessage = Encoding.UTF8.GetString(buffer, 0, receivedBytes);
+                    Message ackMessage = DeserializeMessage(jsonMessage);
+                    Console.WriteLine($"Received ACK: {ackMessage.Content}\n");
+                    acksReceived++;
+                }
+                catch (SocketException)
+                {
+                    Console.WriteLine("Timeout waiting for ACKs.");
+                    break;
+                }
+            }
+            SlowStart();
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error while sending data: {ex.Message}");
-        }
+        SendEnd();
     }
 
     //TODO: [Implement your slow-start algorithm considering the threshold] 
     private void SlowStart()
     {
-        return;
+        if (acksReceived != packetsSent)
+        {
+            threshold = threshold / 2;
+        }
+        else if (packetsSent < threshold)
+        {
+            packetRate = packetRate * 2; // Increase the number of packets sent exponentialy
+        }
+        else
+        {
+            return;
+        }
     }
     //TODO: [End sending data to client]
 
     //TODO: [Handle Errors]
 
     //TODO: [Send End]
-
+    private void SendEnd()
+    {
+        Message End = new Message();
+        End.Type = MessageType.End;
+        End.Content = "End";
+        string endMessage = SerializeMessage(End);
+        byte[] data = Encoding.ASCII.GetBytes(endMessage);
+        server_socket.SendTo(data, clientEndpoint);
+    }
     //TODO: create all needed methods to handle incoming messages
 
 
