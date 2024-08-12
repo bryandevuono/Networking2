@@ -49,9 +49,9 @@ class ServerUDP
     private const int bufSize = 8 * 1024;
     public byte[] buffer = new byte[bufSize];
     public int threshold;
-    public int acksReceived;
+    public int acksReceived = 0;
     int packetsSent;
-    int packetRate;
+    int packetRate = 1;
     //TODO: keep receiving messages from clients
     // you can call a dedicated method to handle each received type of messages
     public static string SerializeMessage(Message message)
@@ -186,12 +186,9 @@ class ServerUDP
     }
     private void SendData(string[] fragments)
     {
-        int packetRate = 1;
         int currentIndex = 0;
         while(currentIndex < fragments.Length)
         {
-            acksReceived = 0;
-            packetsSent = 0;
             for (int i = 0; i < packetRate && currentIndex < fragments.Length; i++)
             {
                 string message = $"{currentIndex} {fragments[currentIndex]}";
@@ -201,7 +198,7 @@ class ServerUDP
                 Console.WriteLine($"Sent: {message}");
                 packetsSent++;
                 currentIndex++;
-                Thread.Sleep(1 / packetRate);// timeout
+                Thread.Sleep(100 / packetRate);// timeout
                 Console.WriteLine($"Packet rate: {packetRate}");
                 Console.WriteLine($"Ack's received: {acksReceived}");
             }
@@ -221,8 +218,8 @@ class ServerUDP
                     Console.WriteLine("Timeout waiting for ACKs.");
                     break;
                 }
+                SlowStart();
             }
-            SlowStart();
         }
         SendEnd();
     }
@@ -230,11 +227,7 @@ class ServerUDP
     //TODO: [Implement your slow-start algorithm considering the threshold] 
     private void SlowStart()
     {
-        if (acksReceived != packetsSent)
-        {
-            threshold = threshold / 2;
-        }
-        else if (packetsSent < threshold)
+        if (packetsSent <= threshold)
         {
             packetRate = packetRate * 2; // Increase the number of packets sent exponentialy
         }
@@ -242,6 +235,7 @@ class ServerUDP
         {
             return;
         }
+        Console.WriteLine($"Threshold: {threshold}");
     }
     //TODO: [End sending data to client]
 

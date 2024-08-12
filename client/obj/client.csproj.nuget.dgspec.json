@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\bryan\\OneDrive\\Documenten\\Networking2\\client\\client.csproj": {}
+    "C:\\Users\\bryan\\Documents\\Networking2\\client\\client.csproj": {}
   },
   "projects": {
-    "C:\\Users\\bryan\\OneDrive\\Documenten\\Networking2\\client\\client.csproj": {
+    "C:\\Users\\bryan\\Documents\\Networking2\\client\\client.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\bryan\\OneDrive\\Documenten\\Networking2\\client\\client.csproj",
+        "projectUniqueName": "C:\\Users\\bryan\\Documents\\Networking2\\client\\client.csproj",
         "projectName": "client",
-        "projectPath": "C:\\Users\\bryan\\OneDrive\\Documenten\\Networking2\\client\\client.csproj",
+        "projectPath": "C:\\Users\\bryan\\Documents\\Networking2\\client\\client.csproj",
         "packagesPath": "C:\\Users\\bryan\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\bryan\\OneDrive\\Documenten\\Networking2\\client\\obj\\",
+        "outputPath": "C:\\Users\\bryan\\Documents\\Networking2\\client\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\bryan\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -43,16 +43,35 @@
             "net47",
             "net471",
             "net472",
-            "net48"
+            "net48",
+            "net481"
           ],
           "assetTargetFallback": true,
           "warn": true,
+          "downloadDependencies": [
+            {
+              "name": "Microsoft.AspNetCore.App.Ref",
+              "version": "[6.0.21, 6.0.21]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Host.win-x64",
+              "version": "[6.0.21, 6.0.21]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Ref",
+              "version": "[6.0.21, 6.0.21]"
+            },
+            {
+              "name": "Microsoft.WindowsDesktop.App.Ref",
+              "version": "[6.0.21, 6.0.21]"
+            }
+          ],
           "frameworkReferences": {
             "Microsoft.NETCore.App": {
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\6.0.321\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.307\\RuntimeIdentifierGraph.json"
         }
       }
     }
