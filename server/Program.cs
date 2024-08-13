@@ -198,11 +198,10 @@ class ServerUDP
                 Console.WriteLine($"Sent: {message}");
                 packetsSent++;
                 currentIndex++;
-                Thread.Sleep(100 / packetRate);// timeout
-                Console.WriteLine($"Packet rate: {packetRate}");
-                Console.WriteLine($"Ack's received: {acksReceived}");
+                Console.WriteLine($"Packet rate: {packetRate}"); // remove later
+                Console.WriteLine($"Ack's received: {acksReceived}"); // remove later
             }
-            server_socket.ReceiveTimeout = 10;
+
             while (acksReceived < packetsSent)
             {
                 try
@@ -218,8 +217,9 @@ class ServerUDP
                     Console.WriteLine("Timeout waiting for ACKs.");
                     break;
                 }
-                SlowStart();
             }
+            Thread.Sleep(1000);// timeout
+            SlowStart();
         }
         SendEnd();
     }

@@ -1,13 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "C3/NzbvRxHVYmpH6kC8EEVMVsMrLuqgpQyoKCuCwVaSnygnC2i3QJKhNtX6A7vAsqj0OtmDB8nUTVCeyzcJAJg==",
+  "dgSpecHash": "WZrNqaDTW0A63MoSQequDUcCz1YSFSlkCPMeowHl4MF2zERtSEMj5OpYaRJhcn3I2DOFvo154uuFcCyHhZVMIA==",
   "success": true,
-  "projectFilePath": "C:\\Users\\bryan\\Documents\\Networking2\\client\\client.csproj",
-  "expectedPackageFiles": [
-    "C:\\Users\\bryan\\.nuget\\packages\\microsoft.netcore.app.ref\\6.0.21\\microsoft.netcore.app.ref.6.0.21.nupkg.sha512",
-    "C:\\Users\\bryan\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\6.0.21\\microsoft.windowsdesktop.app.ref.6.0.21.nupkg.sha512",
-    "C:\\Users\\bryan\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\6.0.21\\microsoft.aspnetcore.app.ref.6.0.21.nupkg.sha512",
-    "C:\\Users\\bryan\\.nuget\\packages\\microsoft.netcore.app.host.win-x64\\6.0.21\\microsoft.netcore.app.host.win-x64.6.0.21.nupkg.sha512"
-  ],
+  "projectFilePath": "C:\\Users\\bryan\\OneDrive\\Documenten\\Networking2\\client\\client.csproj",
+  "expectedPackageFiles": [],
   "logs": []
 }

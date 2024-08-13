@@ -44,7 +44,7 @@ class ClientUDP
     //TODO: create all needed objects for your sockets 
     private const int bufSize = 8 * 1024;
     public byte[] buffer = new byte[bufSize];
-    int threshold = 10;
+    int threshold = 256;
     public static string SerializeMessage(Message message)
     {
         return JsonSerializer.Serialize(message);
