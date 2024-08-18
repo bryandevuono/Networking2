@@ -230,12 +230,14 @@ class ServerUDP
         if (packetsSent <= threshold)
         {
             packetRate = packetRate * 2; // Increase the number of packets sent exponentialy
+            //threshold = threshold * 2
         }
         else
         {
+            //threshold = threshold/2
             return;
         }
-        Console.WriteLine($"Threshold: {threshold}");
+        Console.WriteLine($"Threshold: {threshold}");// remove later
     }
     //TODO: [End sending data to client]
 
