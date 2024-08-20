@@ -194,7 +194,7 @@ class ServerUDP
         {
             for (int i = 0; i < packetRate && currentIndex < fragments.Length; i++)
             {
-                string message = $"{currentIndex:0000} {fragments[currentIndex]}";
+                string message = $"{currentIndex:0000}{fragments[currentIndex]}";
                 byte[] data = Encoding.UTF8.GetBytes(message);
 
                 server_socket.SendTo(data, clientEndpoint);
@@ -202,11 +202,11 @@ class ServerUDP
                 packetsSent++;
                 currentIndex++;
             }
-            Thread.Sleep(1000);// timeout for package loss
             while (acksReceived < packetsSent)
             {
                 try
                 {
+                    server_socket.ReceiveTimeout = 1000; // sad flow
                     int receivedBytes = server_socket.ReceiveFrom(buffer, ref clientEndpoint);
                     string jsonMessage = Encoding.UTF8.GetString(buffer, 0, receivedBytes);
                     Message ackMessage = DeserializeMessage(jsonMessage);
@@ -216,12 +216,13 @@ class ServerUDP
                 catch (SocketException)
                 {
                     Console.WriteLine("Timeout waiting for ACKs.");
+                    currentIndex = acksReceived ;// sad flow
                     break;
                 }
             }
-            Thread.Sleep(1000);// timeout
             SlowStart();
-            currentIndex = acksReceived - 1; //in case of sad flow
+            Console.WriteLine($"Current index: {currentIndex}"); // delete later
+            Console.WriteLine($"Acks rec: {acksReceived}"); // delete later
         }
         SendEnd();
     }
