@@ -14,7 +14,10 @@ class Program
     static void Main(string[] args)
     {
         ServerUDP sUDP = new ServerUDP();
-        sUDP.start();
+        while(true)
+        {
+            sUDP.start();
+        }
     }
 }
 
@@ -191,17 +194,15 @@ class ServerUDP
         {
             for (int i = 0; i < packetRate && currentIndex < fragments.Length; i++)
             {
-                string message = $"{currentIndex} {fragments[currentIndex]}";
+                string message = $"{currentIndex:0000} {fragments[currentIndex]}";
                 byte[] data = Encoding.UTF8.GetBytes(message);
 
                 server_socket.SendTo(data, clientEndpoint);
                 Console.WriteLine($"Sent: {message}");
                 packetsSent++;
                 currentIndex++;
-                Console.WriteLine($"Packet rate: {packetRate}"); // remove later
-                Console.WriteLine($"Ack's received: {acksReceived}"); // remove later
             }
-
+            Thread.Sleep(1000);// timeout for package loss
             while (acksReceived < packetsSent)
             {
                 try
@@ -220,6 +221,7 @@ class ServerUDP
             }
             Thread.Sleep(1000);// timeout
             SlowStart();
+            currentIndex = acksReceived - 1; //in case of sad flow
         }
         SendEnd();
     }
@@ -230,11 +232,9 @@ class ServerUDP
         if (packetsSent <= threshold)
         {
             packetRate = packetRate * 2; // Increase the number of packets sent exponentialy
-            //threshold = threshold * 2
         }
         else
         {
-            //threshold = threshold/2
             return;
         }
         Console.WriteLine($"Threshold: {threshold}");// remove later
