@@ -258,7 +258,7 @@ class ServerUDP
             {
                 try
                 {
-                    server_socket.ReceiveTimeout = 1000; // sad flow
+                    server_socket.ReceiveTimeout = 5000; // sad flow
                     int receivedBytes = server_socket.ReceiveFrom(buffer, ref clientEndpoint);
                     string jsonMessage = Encoding.UTF8.GetString(buffer, 0, receivedBytes);
                     Message? ackMessage = DeserializeMessage(jsonMessage);
