@@ -183,7 +183,7 @@ class ClientUDP
         {
             Message ackMessage = new Message();
             ackMessage.Type = MessageType.Ack;
-            ackMessage.Content = $"ACK: Data with ID: '{AcksSent}' received\n";
+            ackMessage.Content = $"{AcksSent}\n";
             string message = SerializeMessage(ackMessage);
             byte[] data = Encoding.UTF8.GetBytes(message);
             client_socket.SendTo(data, serverEndpoint);
