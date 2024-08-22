@@ -163,7 +163,7 @@ class ClientUDP
             try
             {
                 Message endMessage = DeserializeMessage(receivedMessage);
-                if(endMessage.Type == MessageType.End)
+                if (endMessage.Type == MessageType.End)
                 {
                     ReceiveEnd();
                 }

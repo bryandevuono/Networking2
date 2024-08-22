@@ -14,7 +14,7 @@ class Program
     static void Main(string[] args)
     {
         ServerUDP sUDP = new ServerUDP();
-        while(true)
+        while (true)
         {
             sUDP.start();
         }
@@ -28,6 +28,7 @@ class ServerUDP
     // Do not put all the logic into one method. Create multiple methods to handle different tasks.
     private Socket server_socket;
     private EndPoint clientEndpoint;
+    private bool isClientConnected = false;
     public ServerUDP()
     {
         server_socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
@@ -40,6 +41,7 @@ class ServerUDP
         try
         {
             Console.WriteLine("Listening...");
+            isClientConnected = false;
             ReceiveMessage();
         }
         catch (Exception ex)
@@ -61,7 +63,7 @@ class ServerUDP
     {
         return JsonSerializer.Serialize(message);
     }
-    public static Message DeserializeMessage(string jsonMessage)
+    public static Message? DeserializeMessage(string jsonMessage)
     {
         return JsonSerializer.Deserialize<Message>(jsonMessage);
     }
@@ -72,9 +74,22 @@ class ServerUDP
         {
             int receivedBytes = server_socket.ReceiveFrom(buffer, ref clientEndpoint);
             string jsonMessage = Encoding.UTF8.GetString(buffer, 0, receivedBytes);
-            Message ReceivedMessage = DeserializeMessage(jsonMessage);
-            Console.WriteLine("Recieved from " + clientEndpoint + ": " + ReceivedMessage.Content);
-            SendWelcome();
+            Message? ReceivedMessage = DeserializeMessage(jsonMessage);
+
+            if (ReceivedMessage != null)
+            {
+                Console.WriteLine("Recieved from " + clientEndpoint + ": " + ReceivedMessage.Content);
+                isClientConnected = true;
+                SendWelcome();
+            }
+            else
+            {
+                Console.WriteLine("Received a null or invalid message.");
+            }
+        }
+        catch (SocketException ex)
+        {
+            HandleClientDisconnection(ex);
         }
         catch (Exception ex)
         {
@@ -82,6 +97,15 @@ class ServerUDP
         }
     }
 
+    private void HandleClientDisconnection(SocketException ex)
+    {
+        if (isClientConnected)
+        {
+            Console.WriteLine($"Client disconnected: : {ex.Message}");
+            isClientConnected = false;
+        }
+        Console.WriteLine("Server is waiting for a new connection...");
+    }
     //TODO: [Send Welcome]
     private void SendWelcome()
     {
@@ -96,6 +120,10 @@ class ServerUDP
             Console.WriteLine($"Message sent to {clientEndpoint}: {Welcome.Content}\n");
             ReceiveThreshold();
         }
+        catch (SocketException ex)
+        {
+            HandleClientDisconnection(ex);
+        }
         catch (Exception ex)
         {
             Console.WriteLine($"Error while sending welcome message: {ex.Message}");
@@ -108,10 +136,18 @@ class ServerUDP
         {
             int receivedBytes = server_socket.ReceiveFrom(buffer, ref clientEndpoint);
             string jsonMessage = Encoding.UTF8.GetString(buffer, 0, receivedBytes);
-            Message ReceivedMessage = DeserializeMessage(jsonMessage);
-            threshold = Int32.Parse(ReceivedMessage.Content);
-            Console.WriteLine("Recieved threshold from " + clientEndpoint + ": " + ReceivedMessage.Content);
-            SendThresholdACK();
+            Message? ReceivedMessage = DeserializeMessage(jsonMessage);
+
+            if (ReceivedMessage != null && !string.IsNullOrEmpty(ReceivedMessage.Content) && int.TryParse(ReceivedMessage.Content, out int parsedThreshold))
+            {
+                threshold = parsedThreshold;
+                Console.WriteLine("Recieved threshold from " + clientEndpoint + ": " + ReceivedMessage.Content);
+                SendThresholdACK();
+            }
+            else
+            {
+                Console.WriteLine("Invalid or missing threshold received.");
+            }
         }
         catch (Exception ex)
         {
@@ -123,9 +159,11 @@ class ServerUDP
     {
         try
         {
-            Message ThresholdAck = new Message();
-            ThresholdAck.Type = MessageType.Ack;
-            ThresholdAck.Content = "ACK: Threshold is received\n";
+            Message ThresholdAck = new Message
+            {
+                Type = MessageType.Ack,
+                Content = "ACK: Threshold is received\n"
+            };
             string Ack = SerializeMessage(ThresholdAck);
             byte[] data = Encoding.ASCII.GetBytes(Ack);
             server_socket.SendTo(data, clientEndpoint);
@@ -157,13 +195,27 @@ class ServerUDP
         {
             int receivedBytes = server_socket.ReceiveFrom(buffer, ref clientEndpoint);
             string jsonMessage = Encoding.UTF8.GetString(buffer, 0, receivedBytes);
-            Message receivedMessage = DeserializeMessage(jsonMessage);
-            Console.WriteLine($"Received data request from {clientEndpoint}: {receivedMessage.Content}\n");
-            if (receivedMessage.Type == MessageType.RequestData && receivedMessage.Content == "hamlet.txt")
+            Message? receivedMessage = DeserializeMessage(jsonMessage);
+
+            if (receivedMessage != null)
             {
-                string[] fragments = SplitIntoFragments("hamlet.txt");
-                SendData(fragments);
+                Console.WriteLine($"Received data request from {clientEndpoint}: {receivedMessage.Content}\n");
+                isClientConnected = true;
+
+                if (receivedMessage.Type == MessageType.RequestData && receivedMessage.Content == "hamlet.txt")
+                {
+                    string[] fragments = SplitIntoFragments("hamlet.txt");
+                    SendData(fragments);
+                }
             }
+            else
+            {
+                Console.WriteLine("Received a null or invalid message.");
+            }
+        }
+        catch (SocketException ex)
+        {
+            HandleClientDisconnection(ex);
         }
         catch (Exception ex)
         {
@@ -190,7 +242,7 @@ class ServerUDP
     private void SendData(string[] fragments)
     {
         int currentIndex = 0;
-        while(currentIndex < fragments.Length)
+        while (currentIndex < fragments.Length)
         {
             for (int i = 0; i < packetRate && currentIndex < fragments.Length; i++)
             {
@@ -198,7 +250,7 @@ class ServerUDP
                 byte[] data = Encoding.UTF8.GetBytes(message);
 
                 server_socket.SendTo(data, clientEndpoint);
-                Console.WriteLine($"Sent: {message}");
+                Console.WriteLine($"Sent fragment number: {currentIndex}");
                 packetsSent++;
                 currentIndex++;
             }
@@ -209,20 +261,20 @@ class ServerUDP
                     server_socket.ReceiveTimeout = 1000; // sad flow
                     int receivedBytes = server_socket.ReceiveFrom(buffer, ref clientEndpoint);
                     string jsonMessage = Encoding.UTF8.GetString(buffer, 0, receivedBytes);
-                    Message ackMessage = DeserializeMessage(jsonMessage);
-                    Console.WriteLine($"Received ACK: {ackMessage.Content}\n");
+                    Message? ackMessage = DeserializeMessage(jsonMessage);
+                    // Console.WriteLine($"Received ACK: {ackMessage.Content}\n");
+                    Console.WriteLine($"Received ACK for fragment number: {acksReceived}\n");
                     acksReceived++;
                 }
                 catch (SocketException)
                 {
                     Console.WriteLine("Timeout waiting for ACKs.");
-                    currentIndex = acksReceived ;// sad flow
+                    currentIndex = acksReceived;// sad flow
                     break;
                 }
             }
             SlowStart();
-            Console.WriteLine($"Current index: {currentIndex}"); // delete later
-            Console.WriteLine($"Acks rec: {acksReceived}"); // delete later
+            Console.WriteLine($"Current index: {currentIndex}, Acks received: {acksReceived}, Threshold: {threshold}"); // delete later
         }
         SendEnd();
     }
