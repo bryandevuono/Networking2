@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\bryan\\OneDrive\\Documenten\\Networking2\\server\\server.csproj": {}
+    "C:\\Users\\julin\\OneDrive\\Bureaublad\\School\\Jaar 2\\Op3\\Networking\\Networking2\\server\\server.csproj": {}
   },
   "projects": {
-    "C:\\Users\\bryan\\OneDrive\\Documenten\\Networking2\\server\\server.csproj": {
+    "C:\\Users\\julin\\OneDrive\\Bureaublad\\School\\Jaar 2\\Op3\\Networking\\Networking2\\server\\server.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\bryan\\OneDrive\\Documenten\\Networking2\\server\\server.csproj",
+        "projectUniqueName": "C:\\Users\\julin\\OneDrive\\Bureaublad\\School\\Jaar 2\\Op3\\Networking\\Networking2\\server\\server.csproj",
         "projectName": "server",
-        "projectPath": "C:\\Users\\bryan\\OneDrive\\Documenten\\Networking2\\server\\server.csproj",
-        "packagesPath": "C:\\Users\\bryan\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\bryan\\OneDrive\\Documenten\\Networking2\\server\\obj\\",
+        "projectPath": "C:\\Users\\julin\\OneDrive\\Bureaublad\\School\\Jaar 2\\Op3\\Networking\\Networking2\\server\\server.csproj",
+        "packagesPath": "C:\\Users\\julin\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\julin\\OneDrive\\Bureaublad\\School\\Jaar 2\\Op3\\Networking\\Networking2\\server\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\bryan\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "C:\\Users\\julin\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net6.0"
@@ -32,6 +32,11 @@
           "warnAsError": [
             "NU1605"
           ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
         }
       },
       "frameworks": {
@@ -43,16 +48,35 @@
             "net47",
             "net471",
             "net472",
-            "net48"
+            "net48",
+            "net481"
           ],
           "assetTargetFallback": true,
           "warn": true,
+          "downloadDependencies": [
+            {
+              "name": "Microsoft.AspNetCore.App.Ref",
+              "version": "[6.0.31, 6.0.31]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Host.win-x64",
+              "version": "[6.0.31, 6.0.31]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Ref",
+              "version": "[6.0.31, 6.0.31]"
+            },
+            {
+              "name": "Microsoft.WindowsDesktop.App.Ref",
+              "version": "[6.0.31, 6.0.31]"
+            }
+          ],
           "frameworkReferences": {
             "Microsoft.NETCore.App": {
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\6.0.321\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.302\\RuntimeIdentifierGraph.json"
         }
       }
     }

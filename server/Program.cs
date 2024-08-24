@@ -29,6 +29,8 @@ class ServerUDP
     private Socket server_socket;
     private EndPoint clientEndpoint;
     private bool isClientConnected = false;
+    private List<string> fragmentsList = new List<string>();
+
     public ServerUDP()
     {
         try
@@ -37,7 +39,7 @@ class ServerUDP
             clientEndpoint = new IPEndPoint(IPAddress.Any, 0);
             server_socket.Bind(new IPEndPoint(IPAddress.Any, 32000));
         }
-        catch(SocketException ex)
+        catch (SocketException ex)
         {
             Console.WriteLine($"There was a problem while creating the socket: {ex}");
         }
@@ -303,6 +305,7 @@ class ServerUDP
                 server_socket.SendTo(data, clientEndpoint);
                 Console.WriteLine($"Sent fragment number: {currentIndex}");
                 packetsSent++;
+                fragmentsList.Add(fragments[currentIndex]);
                 currentIndex++;
             }
             while (acksReceived < packetsSent)
@@ -333,7 +336,27 @@ class ServerUDP
             SlowStart();
             Console.WriteLine($"Current index: {currentIndex}, Acks received: {acksReceived}, Threshold: {threshold}, packet rate: {packetRate}"); // delete later
         }
+        WriteToFile();
         SendEnd();
+    }
+
+    private void WriteToFile()
+    {
+        try
+        {
+            using (StreamWriter writer = new StreamWriter("hamlet_output.txt"))
+            {
+                foreach (var fragment in fragmentsList)
+                {
+                    writer.Write(fragment);
+                }
+            }
+            Console.WriteLine("Data written to a text file.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error while sending it to the file: {ex.Message}");
+        }
     }
 
     //TODO: [Implement your slow-start algorithm considering the threshold] 
@@ -370,11 +393,13 @@ class ServerUDP
         string endMessage = SerializeMessage(End);
         byte[] data = Encoding.ASCII.GetBytes(endMessage);
         server_socket.SendTo(data, clientEndpoint);
-        start();
+
         //reset all variables
         acksReceived = 0;
         packetsSent = 0;
         packetRate = 1;
+        fragmentsList.Clear();
+        start();
     }
     //TODO: create all needed methods to handle incoming messages
 
