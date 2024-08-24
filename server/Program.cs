@@ -31,9 +31,16 @@ class ServerUDP
     private bool isClientConnected = false;
     public ServerUDP()
     {
-        server_socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-        clientEndpoint = new IPEndPoint(IPAddress.Any, 0);
-        server_socket.Bind(new IPEndPoint(IPAddress.Any, 32000));
+        try
+        {
+            server_socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            clientEndpoint = new IPEndPoint(IPAddress.Any, 0);
+            server_socket.Bind(new IPEndPoint(IPAddress.Any, 32000));
+        }
+        catch(SocketException ex)
+        {
+            Console.WriteLine($"There was a problem while creating the socket: {ex}");
+        }
     }
 
     public void start()
@@ -76,7 +83,7 @@ class ServerUDP
             string jsonMessage = Encoding.UTF8.GetString(buffer, 0, receivedBytes);
             Message? ReceivedMessage = DeserializeMessage(jsonMessage);
 
-            if (ReceivedMessage != null)
+            if (ReceivedMessage != null && ReceivedMessage.Type == MessageType.Hello)
             {
                 Console.WriteLine("Recieved from " + clientEndpoint + ": " + ReceivedMessage.Content);
                 isClientConnected = true;
@@ -94,18 +101,16 @@ class ServerUDP
         catch (Exception ex)
         {
             Console.WriteLine($"Error while receiving message: {ex.Message}");
+            Message Error = new Message();
+            Error.Type = MessageType.Error;
+            Error.Content = $"Error while sending welcome message: {ex.Message}";
+            string ErrorMessage = SerializeMessage(Error);
+            byte[] data = Encoding.ASCII.GetBytes(ErrorMessage);
+            server_socket.SendTo(data, clientEndpoint);
+            start();
         }
     }
 
-    private void HandleClientDisconnection(SocketException ex)
-    {
-        if (isClientConnected)
-        {
-            Console.WriteLine($"Client disconnected: : {ex.Message}");
-            isClientConnected = false;
-        }
-        Console.WriteLine("Server is waiting for a new connection...");
-    }
     //TODO: [Send Welcome]
     private void SendWelcome()
     {
@@ -127,6 +132,13 @@ class ServerUDP
         catch (Exception ex)
         {
             Console.WriteLine($"Error while sending welcome message: {ex.Message}");
+            Message Error = new Message();
+            Error.Type = MessageType.Error;
+            Error.Content = $"Error while sending welcome message: {ex.Message}";
+            string ErrorMessage = SerializeMessage(Error);
+            byte[] data = Encoding.ASCII.GetBytes(ErrorMessage);
+            server_socket.SendTo(data, clientEndpoint);
+            start();
         }
     }
     //TODO: [Receive Data]
@@ -134,11 +146,11 @@ class ServerUDP
     {
         try
         {
+            server_socket.ReceiveTimeout = 5000;
             int receivedBytes = server_socket.ReceiveFrom(buffer, ref clientEndpoint);
             string jsonMessage = Encoding.UTF8.GetString(buffer, 0, receivedBytes);
             Message? ReceivedMessage = DeserializeMessage(jsonMessage);
-
-            if (ReceivedMessage != null && !string.IsNullOrEmpty(ReceivedMessage.Content) && int.TryParse(ReceivedMessage.Content, out int parsedThreshold))
+            if (ReceivedMessage != null && !string.IsNullOrEmpty(ReceivedMessage.Content) && int.TryParse(ReceivedMessage.Content, out int parsedThreshold) && ReceivedMessage.Type == MessageType.Data)
             {
                 threshold = parsedThreshold;
                 Console.WriteLine("Recieved threshold from " + clientEndpoint + ": " + ReceivedMessage.Content);
@@ -149,9 +161,27 @@ class ServerUDP
                 Console.WriteLine("Invalid or missing threshold received.");
             }
         }
+        catch (SocketException ex) when (ex.SocketErrorCode == SocketError.TimedOut)
+        {
+            Console.WriteLine("Timeout waiting for threshold");
+            Message Error = new Message();
+            Error.Type = MessageType.Error;
+            Error.Content = "Timeout waiting for threshold.";
+            string ErrorMessage = SerializeMessage(Error);
+            byte[] data = Encoding.ASCII.GetBytes(ErrorMessage);
+            server_socket.SendTo(data, clientEndpoint);
+            start();
+        }
         catch (Exception ex)
         {
             Console.WriteLine($"Error while receiving message: {ex.Message}");
+            Message Error = new Message();
+            Error.Type = MessageType.Error;
+            Error.Content = $"Error while receiving message: {ex.Message}";
+            string ErrorMessage = SerializeMessage(Error);
+            byte[] data = Encoding.ASCII.GetBytes(ErrorMessage);
+            server_socket.SendTo(data, clientEndpoint);
+            start();
         }
     }
     //TODO: [Send Ack]
@@ -172,6 +202,13 @@ class ServerUDP
         catch (Exception ex)
         {
             Console.WriteLine($"Error while sending message: {ex.Message}");
+            Message Error = new Message();
+            Error.Type = MessageType.Error;
+            Error.Content = $"Error while receiving message: {ex.Message}";
+            string ErrorMessage = SerializeMessage(Error);
+            byte[] data = Encoding.ASCII.GetBytes(ErrorMessage);
+            server_socket.SendTo(data, clientEndpoint);
+            start();
         }
     }
     private void SendDataAck(Message message)
@@ -186,6 +223,13 @@ class ServerUDP
         catch (Exception ex)
         {
             Console.WriteLine($"Error while sending message: {ex.Message}");
+            Message Error = new Message();
+            Error.Type = MessageType.Error;
+            Error.Content = $"Error while sending message: {ex.Message}";
+            string ErrorMessage = SerializeMessage(Error);
+            byte[] data = Encoding.ASCII.GetBytes(ErrorMessage);
+            server_socket.SendTo(data, clientEndpoint);
+            start();
         }
     }
     //TODO: [Receive RequestData]
@@ -220,6 +264,13 @@ class ServerUDP
         catch (Exception ex)
         {
             Console.WriteLine($"Error while receiving data request: {ex.Message}");
+            Message Error = new Message();
+            Error.Type = MessageType.Error;
+            Error.Content = $"Error while receiving data request: {ex.Message}";
+            string ErrorMessage = SerializeMessage(Error);
+            byte[] data = Encoding.ASCII.GetBytes(ErrorMessage);
+            server_socket.SendTo(data, clientEndpoint);
+            start();
         }
     }
 
@@ -266,15 +317,21 @@ class ServerUDP
                     Console.WriteLine($"Received ACK for fragment number: {acksReceived}\n");
                     acksReceived++;
                 }
-                catch (SocketException)
+                catch (SocketException ex) when (ex.SocketErrorCode == SocketError.TimedOut)
                 {
                     Console.WriteLine("Timeout waiting for ACKs.");
                     currentIndex = acksReceived;// sad flow
+                    Message Error = new Message();
+                    Error.Type = MessageType.Error;
+                    Error.Content = "Timeout waiting for ACKs.";
+                    string ErrorMessage = SerializeMessage(Error);
+                    byte[] data = Encoding.ASCII.GetBytes(ErrorMessage);
+                    server_socket.SendTo(data, clientEndpoint);
                     break;
                 }
             }
             SlowStart();
-            Console.WriteLine($"Current index: {currentIndex}, Acks received: {acksReceived}, Threshold: {threshold}"); // delete later
+            Console.WriteLine($"Current index: {currentIndex}, Acks received: {acksReceived}, Threshold: {threshold}, packet rate: {packetRate}"); // delete later
         }
         SendEnd();
     }
@@ -295,7 +352,15 @@ class ServerUDP
     //TODO: [End sending data to client]
 
     //TODO: [Handle Errors]
-
+    private void HandleClientDisconnection(SocketException ex)
+    {
+        if (isClientConnected)
+        {
+            Console.WriteLine($"Client disconnected: : {ex.Message}");
+            isClientConnected = false;
+        }
+        Console.WriteLine("Server is waiting for a new connection...");
+    }
     //TODO: [Send End]
     private void SendEnd()
     {
@@ -305,6 +370,11 @@ class ServerUDP
         string endMessage = SerializeMessage(End);
         byte[] data = Encoding.ASCII.GetBytes(endMessage);
         server_socket.SendTo(data, clientEndpoint);
+        start();
+        //reset all variables
+        acksReceived = 0;
+        packetsSent = 0;
+        packetRate = 1;
     }
     //TODO: create all needed methods to handle incoming messages
 
