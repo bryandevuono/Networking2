@@ -324,16 +324,13 @@ class ServerUDP
                 {
                     Console.WriteLine("Timeout waiting for ACKs.");
                     currentIndex = acksReceived;// sad flow
-                    Message Error = new Message();
-                    Error.Type = MessageType.Error;
-                    Error.Content = "Timeout waiting for ACKs.";
-                    string ErrorMessage = SerializeMessage(Error);
-                    byte[] data = Encoding.ASCII.GetBytes(ErrorMessage);
-                    server_socket.SendTo(data, clientEndpoint);
                     break;
                 }
             }
-            SlowStart();
+            if(acksReceived == packetsSent)
+            {
+                SlowStart();
+            }
             Console.WriteLine($"Current index: {currentIndex}, Acks received: {acksReceived}, Threshold: {threshold}, packet rate: {packetRate}"); // delete later
         }
         WriteToFile();
