@@ -41,6 +41,8 @@ class ServerUDP
         catch (SocketException ex)
         {
             Console.WriteLine($"There was a problem while creating the socket: {ex}");
+            server_socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            clientEndpoint = new IPEndPoint(IPAddress.Any, 0);
         }
     }
 
