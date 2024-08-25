@@ -26,6 +26,7 @@ class ClientUDP
     private Socket client_socket;
     private EndPoint serverEndpoint;
     public int AcksSent;
+    private List<string> fragmentsList = new List<string>();
     public ClientUDP()
     {
         client_socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
@@ -203,7 +204,7 @@ class ClientUDP
             byte[] data = Encoding.ASCII.GetBytes(ErrorMessage);
             client_socket.SendTo(data, serverEndpoint);
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             Console.WriteLine($"Error while receiving message: {ex.Message}");
             Message Error = new Message();
@@ -222,7 +223,7 @@ class ClientUDP
         {
             int receivedBytes = client_socket.ReceiveFrom(buffer, ref serverEndpoint);
             string receivedMessage = Encoding.UTF8.GetString(buffer, 0, receivedBytes);
-            if(receivedMessage == null)
+            if (receivedMessage == null)
             {
                 continue;
             }
@@ -231,22 +232,44 @@ class ClientUDP
                 Message endMessage = DeserializeMessage(receivedMessage);
                 if (endMessage.Type == MessageType.End)
                 {
+                    WriteToFile();
                     ReceiveEnd();
+                    break;
                 }
             }
-            catch(SocketException ex) when (ex.SocketErrorCode == SocketError.NetworkUnreachable)
+            catch (SocketException ex) when (ex.SocketErrorCode == SocketError.NetworkUnreachable)
             {
                 Console.WriteLine($"Something went wrong while connecting: {ex}");
             }
-            catch(SocketException ex)
+            catch (SocketException ex)
             {
                 Console.WriteLine($"Something went wrong while receiving the message: {ex}");
             }
             catch
             {
                 Console.WriteLine($"Data received from server: {receivedMessage}\n");
+                fragmentsList.Add(receivedMessage);
                 SendAck();
             }
+        }
+    }
+
+    private void WriteToFile()
+    {
+        try
+        {
+            using (StreamWriter writer = new StreamWriter("hamlet_output.txt"))
+            {
+                foreach (var fragment in fragmentsList)
+                {
+                    writer.Write(fragment);
+                }
+            }
+            Console.WriteLine("Data written to a text file.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error while sending it to the file: {ex.Message}");
         }
     }
 
@@ -294,6 +317,7 @@ class ClientUDP
             byte[] data = Encoding.ASCII.GetBytes(ErrorMessage);
             client_socket.SendTo(data, serverEndpoint);
         }
+
     }
 
     //TODO: [Receive END]
